@@ -1,13 +1,9 @@
 package com.icanindya.linkage
 
 import org.apache.spark.SparkContext
-import java.io.FileWriter
 import java.io.PrintWriter
 import scala.io.Source
-import scala.util.Random
-import com.rockymadden.stringmetric.similarity._
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.ListBuffer
+import java.io.File
 
 object FL_Extractor {
 
@@ -19,9 +15,11 @@ object FL_Extractor {
   val ENTROPY_FILE_PATH = "E:/Data/Linkage/FL/FL16/entropies/entropy.txt"
   val CORRUPTED_FILE_PATH = "E:/Data/Linkage/FL/FL16/corrupted/FL_16_cor%s_%s.csv"
 
+  val NORMALJOIN_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/normal_join_result.txt"
   val BLOCKJOIN_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/block_join_result.txt"
   val PROBABILISTICJOIN_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/probabilistic_join_result.txt"
-  val NORMALJOIN_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/normal_join_result.txt"
+  val PROBABILISTICJOIN_2_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/probabilistic_join_2_result.txt"
+  val BLOCK_PROBABILISTICJOIN_2_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/block_probabilistic_join_2_result.txt"
 
   val ORIG_DATASET_PATH_FORMAT = DIST_DATASET_DIR + "FL16_%d_0.csv" //.format(dsSize)
   val DIST_DATASET_PATH_FORMAT = DIST_DATASET_DIR + "FL16_%d_%d_%d.csv" //.format(dsSize, corrLevel, i)
@@ -108,9 +106,9 @@ object FL_Extractor {
 
   def main(args: Array[String]) {
     val sc = Spark.getContext()
-    processAndSample(sc, List((1000, 4), (10000, 4), (100000, 4), (1000000, 4)))
+    generateCSV(sc, List((1000, 4), (10000, 4), (100000, 4)))
   }
-  
+
   def getAllPaths(s: Int, t: Int): List[Array[Int]] = {
     val graph = new Graph(new AdjacencyList(dsAttrs).get())
     graph.allPaths(s, t)
@@ -184,6 +182,31 @@ object FL_Extractor {
         .coalesce(1).saveAsTextFile(SAMP_FILE_PATH.format(sampleSize, phDigits))
       println(sampled.length)
     }
+
+  }
+
+  // to be used with the ANU corrupter scripts
+  def generateCSV(sc: SparkContext, params: List[(Int, Int)]) {
+
+    processAndSample(sc, params)
+
+    for ((sampleSize, phDigits) <- params) {
+      val lines = sc.textFile(SAMP_FILE_PATH.format(sampleSize, phDigits))
+      val pw = new PrintWriter(new File(CSV_FILE_PATH.format(sampleSize, phDigits)))
+      pw.println(attrIndex.toSeq.sortBy(_._2).map("\"" + _._1 + "\"").mkString(COMMA))
+      for (line <- lines.map(_.split(COMMA, -1).map("\"" + _ + "\"").mkString(COMMA)).collect()) {
+        pw.println(line)
+      }
+      pw.close
+    }
+  }
+
+  class FL_Person(val firstName: String, val middleName: String, val lastName: String,
+                  val sex: String, val race: String, val dob: String,
+                  val zip: String, val county: String, val party: String,
+                  val regDate: String, val phone: String, val voterNum: String,
+                  val email: String, val address: String) {
+
   }
 
 }

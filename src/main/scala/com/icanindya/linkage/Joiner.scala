@@ -28,6 +28,8 @@ object Joiner {
   val CASE_NORMAL_JOIN = 0
   val CASE_BLOCK_JOIN = 1
   val CASE_PROBABILISTIC_JOIN = 2
+  val CASE_PROBABILISTIC_JOIN_2 = 3
+  val CASE_BLOCK_PROBABILISTIC_JOIN_2 = 4
 
   val SCENE_NC = 0
   val SCENE_FL = 1
@@ -52,12 +54,15 @@ object Joiner {
   var normalJoinResultPath: String = null
   var blockJoinResultPath: String = null
   var probabilisticJoinResultPath: String = null
+  var probabilisticJoin2ResultPath: String = null
+  var blockProbabilisticJoin2ResultPath: String = null
+  
+  var pw: PrintWriter = null 
+
+  val scene = SCENE_NC
+  val option = CASE_BLOCK_PROBABILISTIC_JOIN_2
 
   def main(args: Array[String]): Unit = {
-
-    val scene = SCENE_NC
-    val option = CASE_PROBABILISTIC_JOIN
-
 
     if (scene == SCENE_NC) {
       dsAttrs = NC_Extractor.dsAttrs
@@ -69,6 +74,8 @@ object Joiner {
       normalJoinResultPath = NC_Extractor.NORMALJOIN_RESULT_PATH
       blockJoinResultPath = NC_Extractor.BLOCKJOIN_RESULT_PATH
       probabilisticJoinResultPath = NC_Extractor.PROBABILISTICJOIN_RESULT_PATH
+      probabilisticJoin2ResultPath = NC_Extractor.PROBABILISTICJOIN_2_RESULT_PATH
+      blockProbabilisticJoin2ResultPath = NC_Extractor.BLOCK_PROBABILISTICJOIN_2_RESULT_PATH
 
     } else if (scene == SCENE_FL) {
       dsAttrs = FL_Extractor.dsAttrs
@@ -80,54 +87,75 @@ object Joiner {
       normalJoinResultPath = FL_Extractor.NORMALJOIN_RESULT_PATH
       blockJoinResultPath = FL_Extractor.BLOCKJOIN_RESULT_PATH
       probabilisticJoinResultPath = FL_Extractor.PROBABILISTICJOIN_RESULT_PATH
+      probabilisticJoin2ResultPath = FL_Extractor.PROBABILISTICJOIN_2_RESULT_PATH
+      blockProbabilisticJoin2ResultPath = FL_Extractor.BLOCK_PROBABILISTICJOIN_2_RESULT_PATH
     }
 
-    for (dsSize <- List(1000, 10000, 100000, 1000000)) { //List(1000, 10000, 100000, 1000000)
-      for (path <- List(allPaths(0), allPaths(3))) {
+    for (dsSize <- List(1000000)) { //List(1000, 10000, 100000, 1000000)
+      for (path <- List(allPaths(0))) { //List(allPaths(0), allPaths(3)
         for (corrLevel <- List(0, 5, 10)) { // List(0, 5, 10)
-          for (levensteinThres <- List(0, 1)) {
-//            if((dsSize == 10000 && corrLevel == 0 && levensteinThres == 1))   {
+          for (levensteinThres <- List(0)) {
+            //            if((dsSize == 10000 && corrLevel == 0 && levensteinThres == 1))   {
             val sc = Spark.getContext()
 
             datasets = getDatasets(sc, dsSize, corrLevel)
             testSamples = getTestSamples(sc, dsSize)
 
             if (option == CASE_NORMAL_JOIN) {
-              val pw = new PrintWriter(new FileWriter(normalJoinResultPath, true))
+              pw = new PrintWriter(new FileWriter(normalJoinResultPath, true))
               println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
               pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
 
-              normalJoin(sc, pw, datasets, testSamples, path, levensteinThres)
+              normalJoin(sc, datasets, testSamples, path, levensteinThres)
 
               pw.flush
               pw.close
             } else if (option == CASE_PROBABILISTIC_JOIN) {
-              val pw = new PrintWriter(new FileWriter(probabilisticJoinResultPath, true))
+              pw = new PrintWriter(new FileWriter(probabilisticJoinResultPath, true))
               println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
               pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
 
-              probabilisticJoin(sc, pw, datasets, testSamples, path, levensteinThres)
+              probabilisticJoin(sc, datasets, testSamples, path, levensteinThres)
 
               pw.flush
               pw.close
             } else if (option == CASE_BLOCK_JOIN) {
-              val pw = new PrintWriter(new FileWriter(blockJoinResultPath, true))
+              pw = new PrintWriter(new FileWriter(blockJoinResultPath, true))
               println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
               pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
 
-              blockJoin(sc, pw, datasets, testSamples, path, levensteinThres)
+              blockJoin(sc, datasets, testSamples, path, levensteinThres)
+
+              pw.flush
+              pw.close
+            } else if (option == CASE_PROBABILISTIC_JOIN_2) {
+              pw = new PrintWriter(new FileWriter(probabilisticJoin2ResultPath, true))
+              println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+              pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+
+              probabilisticJoin2(sc, datasets, testSamples, path, levensteinThres)
+
+              pw.flush
+              pw.close
+            } else if (option == CASE_BLOCK_PROBABILISTIC_JOIN_2) {
+              pw = new PrintWriter(new FileWriter(blockProbabilisticJoin2ResultPath, true))
+              println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+              pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+
+              blockProbabilisticJoin2(sc, datasets, testSamples, path, levensteinThres)
 
               pw.flush
               pw.close
             }
             sc.stop()
-//            }
+            //            }
           }
         }
       }
     }
 
   }
+
 
   def getDatasets(sc: SparkContext, dsSize: Int, corrLevel: Int): Array[RDD[Array[String]]] = {
     val numDatasets = dsAttrs.size
@@ -151,7 +179,7 @@ object Joiner {
     for (i <- 0 to str.length() - n) yield str.substring(i, i + n)
   }
 
-  def blockJoin(sc: SparkContext, pw: PrintWriter, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
+  def blockJoin(sc: SparkContext, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
 
     val startTime = System.currentTimeMillis()
 
@@ -213,15 +241,14 @@ object Joiner {
       val joinedDF = model.approxSimilarityJoin(lDF, rDF, DISTANCE_THRESHOLD)
         .select("datasetA.id", "datasetA.common", "datasetA.tuple", "datasetB.id", "datasetB.common", "datasetB.tuple").cache()
         .filter { r =>
-          //          println(r(1).asInstanceOf[String] + " : " + r(4).asInstanceOf[String] + " : " + LevenshteinMetric.compare(r(1).asInstanceOf[String], r(4).asInstanceOf[String]).get)
-          LevenshteinMetric.compare(r(1).asInstanceOf[String], r(4).asInstanceOf[String]).get <= levensteinThres
+          approxEqual(r(1).asInstanceOf[String], r(5).asInstanceOf[String], levensteinThres)
         }.toDF("lid", "lcommon", "ltuple", "rid", "rcommon", "rtuple").cache()
 
       println(" -- -- join size: " + joinedDF.count())
       pw.println(" -- -- join size: " + joinedDF.count())
 
       val joinEndTime = System.currentTimeMillis()
-      println("join time: " + (joinEndTime - verboseEndTime))
+      println(" -- -- join time: " + (joinEndTime - verboseEndTime))
 
       ldb = joinedDF.select("lid", "ltuple", "rtuple")
         .map { r =>
@@ -233,6 +260,8 @@ object Joiner {
           (rtuple, lid)
         }
         .rdd.cache()
+        
+        ldb.count
 
       val rddEndTime = System.currentTimeMillis()
       println(" -- -- dataframe to rdd conversion time: " + TimeUnit.MILLISECONDS.toMinutes(rddEndTime - joinEndTime))
@@ -277,7 +306,7 @@ object Joiner {
 
   }
 
-  def probabilisticJoin(sc: SparkContext, pw: PrintWriter, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
+  def probabilisticJoin(sc: SparkContext, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
 
     val startTime = System.currentTimeMillis()
 
@@ -387,11 +416,277 @@ object Joiner {
     pw.println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
   }
 
-  def normalJoin(sc: SparkContext, pw: PrintWriter, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
+  def probabilisticJoin2(sc: SparkContext, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
 
     val startTime = System.currentTimeMillis()
 
-    val accuracy = Array.fill[Double](5)(0)
+    for (k <- List(20, 30, 40)) {
+
+      val subStartTime = System.currentTimeMillis()
+
+      var ldb = sc.parallelize(testSamples).map(x => (x, 1.0)).zipWithIndex().cache()
+      var groundTruth = ldb.map(x => (x._2, x._1._1(attrIndex(targetAttribute)))).collectAsMap()
+
+      var attrSoFar = dsAttrs(path(0))
+
+      for (i <- 0 to path.length - 2) {
+
+        println(" -- joining: D%d & D%d".format(path(i), path(i + 1)))
+        pw.println(" -- joining: D%d & D%d".format(path(i), path(i + 1)))
+
+        val commonAttrs = attrSoFar.intersect(dsAttrs(path(i + 1)))
+
+        val verboseStartTime = System.currentTimeMillis()
+
+        val ldbRdd = ldb.map { x =>
+          (x._2, tupleToCommonAttrMap(x._1._1, commonAttrs), x._1._2, x._1._1)
+        }.cache()
+
+        val rdb = datasets(path(i + 1)).map(x => (x, 1.0)).zipWithIndex()
+
+        val rdbRdd = rdb.map { x =>
+          (x._2, tupleToCommonAttrMap(x._1._1, commonAttrs), x._1._2, x._1._1)
+        }.cache()
+
+        ldbRdd.count
+        rdbRdd.count
+
+        val verboseEndTime = System.currentTimeMillis()
+        println(" -- -- verbose time: " + (verboseEndTime - verboseStartTime))
+
+        val lidTotscore = ldbRdd.map(x => (x._1, x._3)).groupByKey().map(x => (x._1, x._2.sum)).collectAsMap()
+
+        val lidTopmaps = ldbRdd.map(x => ((x._1, x._2), x._3))
+          .groupByKey()
+          .map {
+            x => (x._1._1, (x._1._2, x._2.sum / lidTotscore(x._1._1)))
+          }
+          .groupByKey()
+          .flatMap { x =>
+            for (mapScore <- x._2.toSeq.sortBy(x => x._2 > x._2).take(k)) yield ((x._1, mapScore._1), mapScore._2)
+          }
+          .collectAsMap()
+
+        val filteredLdbRdd = ldbRdd.filter(x => lidTopmaps.contains((x._1, x._2))).map(x => (x._1, x._2, lidTopmaps((x._1, x._2)), x._4)).collect
+
+        val filterEndTime = System.currentTimeMillis()
+        println(" -- -- filter time: " + (filterEndTime - verboseEndTime))
+
+        ldb = rdbRdd.flatMap { rTuple =>
+          for {
+            lTuple <- filteredLdbRdd
+            if (approxEqual(lTuple._2, rTuple._2, levensteinThres))
+          } yield {
+            attrSoFar.map(attrIndex(_)).map(i => rTuple._4(i) = lTuple._4(i))
+            ((rTuple._4, lTuple._3), lTuple._1)
+          }
+        }.cache()
+
+        println(" -- -- join size: " + ldb.count())
+        pw.println(" -- -- join size: " + ldb.count())
+
+        val joinEndTime = System.currentTimeMillis()
+        println(" -- -- join time: " + (joinEndTime - filterEndTime))
+
+        attrSoFar = attrSoFar.union(dsAttrs(path(i + 1)))
+
+      }
+
+      val result = ldb.map { x =>
+        ((x._2, x._1._1(attrIndex(targetAttribute))), x._1._2)
+      }
+        .groupByKey()
+        .map(x => (x._1._1, (x._1._2, x._2.sum)))
+        .groupByKey()
+        .map { x =>
+          (x._1, x._2.toSeq.sortBy(x => x._2 > x._2).take(5).map(_._1))
+        }
+        .collectAsMap()
+
+      val success = groundTruth.map { x =>
+        val hitCount = Array.fill[Int](5)(0)
+        if (result.contains(x._1) && result(x._1).toList.contains(x._2)) {
+          for (i <- hitCount.size - 1 to result(x._1).toList.indexOf(x._2) by -1) {
+            hitCount(i) = 1
+          }
+        }
+        hitCount
+      }
+        .reduce { (x, y) =>
+          val sumSeq = for (i <- 0 to (5 - 1)) yield x(i) + y(i)
+          sumSeq.toArray
+        }
+
+      println(" -- accuracy for k = " + k + ": " + success.map(x => "%.2f".format((x * 100.0) / testSamples.size)).mkString(COMMA))
+      pw.println(" -- accuracy for k = " + k + ": " + success.map(x => "%.2f".format((x * 100.0) / testSamples.size)).mkString(COMMA))
+
+    }
+
+    val endTime = System.currentTimeMillis()
+
+    println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
+    pw.println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
+  }
+
+  def blockProbabilisticJoin2(sc: SparkContext, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
+
+    val k = 40
+
+    val startTime = System.currentTimeMillis()
+
+    val spark = new SQLContext(sc)
+    import spark.implicits._
+
+    var ldb = sc.parallelize(testSamples).map(x => (x, 1.0)).zipWithIndex().cache()
+    var groundTruth = ldb.map(x => (x._2, x._1._1(attrIndex(targetAttribute)))).collectAsMap()
+
+    var attrSoFar = dsAttrs(path(0))
+
+    for (i <- 0 to path.length - 2) {
+
+      println(" -- joining: D%d & D%d".format(path(i), path(i + 1)))
+      pw.println(" -- joining: D%d & D%d".format(path(i), path(i + 1)))
+
+      var rdb = datasets(path(i + 1)).map(x => (x, 1.0)).zipWithIndex().cache()
+
+      val commonAttrs = attrSoFar.intersect(dsAttrs(path(i + 1)))
+
+      val commonAttrIndices = commonAttrs.map(attrIndex(_))
+
+      val filterStartTime = System.currentTimeMillis()
+
+      val lidTotscore = ldb.map(x => (x._2, x._1._2)).groupByKey().map(x => (x._1, x._2.sum)).collectAsMap()
+
+      val lidTopmaps = ldb.map(x => ((x._2, tupleToCommonAttrMap(x._1._1, commonAttrs)), x._1._2))
+        .groupByKey()
+        .map { x =>
+          (x._1._1, (x._1._2, x._2.sum / lidTotscore(x._1._1)))
+        }
+        .groupByKey()
+        .flatMap { x =>
+          for (mapScore <- x._2.toSeq.sortBy(x => x._2 > x._2).take(k)) yield ((x._1, mapScore._1), mapScore._2)
+        }
+        .collectAsMap()
+
+      val filteredLdb = ldb.filter(x => lidTopmaps.contains((x._2, tupleToCommonAttrMap(x._1._1, commonAttrs))))
+        .map { x =>
+          ((x._1._1, lidTopmaps(x._2, tupleToCommonAttrMap(x._1._1, commonAttrs))), x._2)
+        }
+
+      filteredLdb.count
+
+      val filterEndTime = System.currentTimeMillis()
+      println(" -- -- filter time: " + (filterEndTime - filterStartTime))
+
+      val nGrams = filteredLdb.union(rdb).flatMap { x =>
+        extractNGrams(commonAttrIndices.map(x._1._1(_)).reduce(_ + _), GRAM_SIZE)
+      }.distinct().zipWithIndex().collectAsMap()
+
+      val nGramEndTime = System.currentTimeMillis()
+      println(" -- -- ngram map construction time: " + (nGramEndTime - filterEndTime))
+
+      val filteredLdbRdd = filteredLdb.map { x =>
+        val commAttrVal = commonAttrIndices.map(x._1._1(_)).reduce(_ + _)
+        val sparseVecSeq = extractNGrams(commAttrVal, GRAM_SIZE).distinct.map(x => (nGrams(x).toInt, 1.0)).sortBy(_._1).toSeq
+        (x._2, Vectors.sparse(nGrams.size, sparseVecSeq), commAttrVal, x._1._1, x._1._2)
+      }
+
+      val rdbRdd = rdb.map { x =>
+        val commAttrVal = commonAttrIndices.map(x._1._1(_)).reduce(_ + _)
+        val sparseVecSeq = extractNGrams(commAttrVal, GRAM_SIZE).distinct.map(x => (nGrams(x).toInt, 1.0)).sortBy(_._1).toSeq
+        (x._2, Vectors.sparse(nGrams.size, sparseVecSeq), commAttrVal, x._1._1, x._1._2)
+      }
+
+      val lDF = spark.createDataFrame(filteredLdbRdd).toDF("id", "keys", "common", "tuple", "score").cache()
+      val rDF = spark.createDataFrame(rdbRdd).toDF("id", "keys", "common", "tuple", "score").cache()
+
+      lDF.count()
+      rDF.count()
+
+      val verboseEndTime = System.currentTimeMillis()
+      println(" -- -- verbose time: " + (verboseEndTime - nGramEndTime))
+
+      val mh = new MinHashLSH()
+        .setNumHashTables(NUM_HASH_TABLES)
+        .setInputCol("keys")
+        .setOutputCol("values")
+
+      val model = mh.fit(lDF)
+
+      val joinedDF = model.approxSimilarityJoin(lDF, rDF, DISTANCE_THRESHOLD)
+        .select("datasetA.id", "datasetA.common", "datasetA.tuple", "datasetA.score", "datasetB.id", "datasetB.common", "datasetB.tuple").cache()
+        .filter { r =>
+          approxEqual(r(1).asInstanceOf[String], r(5).asInstanceOf[String], levensteinThres)
+        }.toDF("lid", "lcommon", "ltuple", "lscore", "rid", "rcommon", "rtuple").cache()
+
+      println(" -- -- join size: " + joinedDF.count())
+      pw.println(" -- -- join size: " + joinedDF.count())
+
+      val joinEndTime = System.currentTimeMillis()
+      println(" -- -- join time: " + (joinEndTime - verboseEndTime))
+
+      ldb = joinedDF.select("lid", "ltuple", "rtuple", "lscore")
+        .map { r =>
+          val lid = r(0).asInstanceOf[Long]
+          val ltuple = r(1).asInstanceOf[WrappedArray[String]].toArray
+          val rtuple = r(2).asInstanceOf[WrappedArray[String]].toArray
+          val lscore = r(3).asInstanceOf[Double]
+
+          attrSoFar.map(attrIndex(_)).map(i => rtuple(i) = ltuple(i))
+          ((rtuple, lscore), lid)
+        }
+        .rdd.cache()
+        
+      ldb.count
+
+      val rddEndTime = System.currentTimeMillis()
+      println(" -- -- dataframe to rdd conversion time: " + TimeUnit.MILLISECONDS.toMinutes(rddEndTime - joinEndTime))
+
+      attrSoFar = attrSoFar.union(dsAttrs(path(i + 1)))
+
+    }
+
+    val result = ldb.map { x =>
+      ((x._2, x._1._1(attrIndex(targetAttribute))), x._1._2)
+    }
+      .groupByKey()
+      .map(x => (x._1._1, (x._1._2, x._2.sum)))
+      .groupByKey()
+      .map { x =>
+        (x._1, x._2.toSeq.sortBy(x => x._2 > x._2).take(5).map(_._1))
+      }
+      .collectAsMap()
+
+    val success = groundTruth.map { x =>
+      val hitCount = Array.fill[Int](5)(0)
+      if (result.contains(x._1) && result(x._1).toList.contains(x._2)) {
+        for (i <- hitCount.size - 1 to result(x._1).toList.indexOf(x._2) by -1) {
+          hitCount(i) = 1
+        }
+      }
+      hitCount
+    }
+      .reduce { (x, y) =>
+        val sumSeq = for (i <- 0 to (5 - 1)) yield x(i) + y(i)
+        sumSeq.toArray
+      }
+
+    println(" -- accuracy: " + success.map(x => "%.2f".format((x * 100.0) / testSamples.size)).mkString(COMMA))
+    pw.println(" -- accuracy: " + success.map(x => "%.2f".format((x * 100.0) / testSamples.size)).mkString(COMMA))
+
+    val endTime = System.currentTimeMillis()
+
+    println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
+    pw.println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
+
+  }
+
+  
+  
+  
+  def normalJoin(sc: SparkContext, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
+
+    val startTime = System.currentTimeMillis()
 
     val subStartTime = System.currentTimeMillis()
 
@@ -457,7 +752,6 @@ object Joiner {
       .collectAsMap()
 
     //    val resultSize = result.map(_._2.size).reduce(_ + _)
-
     val success = groundTruth.map { x =>
       val hitCount = Array.fill[Int](5)(0)
       if (result.contains(x._1) && result(x._1).toList.contains(x._2)) {
@@ -480,29 +774,35 @@ object Joiner {
     println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
     pw.println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
   }
+
+
   
-  var boo = false
-
+  
   def approxEqual(lCommonAttrMap: Map[String, String], rCommonAttrMap: Map[String, String], levensteinThres: Int): Boolean = {
-//    val startTime = System.currentTimeMillis()
-
+    
+    if(levensteinThres == 0) return lCommonAttrMap == rCommonAttrMap
+    
     val sortedKeys = lCommonAttrMap.keys.toSeq.sortWith(_ < _)
     val lValue = sortedKeys.map(lCommonAttrMap(_)).mkString("")
     val rValue = sortedKeys.map(rCommonAttrMap(_)).mkString("")
-    
-    val editDist = LevenshteinMetric.compare(lValue, rValue).get
-    if(boo == true && editDist <= 1) println(lValue + " : " + rValue)
-//    val endTime = System.currentTimeMillis()
-    
-//    println("levenstein  time: " + (endTime - startTime))
-    
-    if (editDist <= levensteinThres) return true
+
+    if (LevenshteinMetric.compare(lValue, rValue).get <= levensteinThres) return true
     else return false
   }
+  
+  
+  
+  def approxEqual(lCommon: String, rCommon: String, levensteinThres: Int): Boolean = {
+    if(levensteinThres == 0) return lCommon == rCommon
+    
+    if(LevenshteinMetric.compare(lCommon, rCommon).get <= levensteinThres) return true
+    else return false
+  }
+  
 
-  def tupleToCommonAttrMap(tuple: Array[String], commonAttr: List[String]): Map[String, String] = {
+  def tupleToCommonAttrMap(tuple: Array[String], commonAttrs: List[String]): Map[String, String] = {
     var keyValue = Map[String, String]()
-    for (attr <- commonAttr) {
+    for (attr <- commonAttrs) {
       keyValue += (attr -> tuple(attrIndex(attr)))
     }
     keyValue
