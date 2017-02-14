@@ -44,7 +44,7 @@ object Joiner {
 
   var dsAttrs: Array[List[String]] = null
   var attrIndex: Map[String, Int] = null
-  var targetAttribute: String = null
+  var targetAttribute: List[String] = null
   var origDsPathFormat: String = null
   var distDsPathFormat: String = null
   var allPaths: List[Array[Int]] = null
@@ -56,21 +56,21 @@ object Joiner {
   var probabilisticJoinResultPath: String = null
   var probabilisticJoin2ResultPath: String = null
   var blockProbabilisticJoin2ResultPath: String = null
-  
-  var pw: PrintWriter = null 
 
-  val scene = SCENE_NC
-  val option = CASE_BLOCK_PROBABILISTIC_JOIN_2
+  var pw: PrintWriter = null
+
+  val scene = SCENE_FL
+  val option = CASE_BLOCK_JOIN
 
   def main(args: Array[String]): Unit = {
 
     if (scene == SCENE_NC) {
       dsAttrs = NC_Extractor.dsAttrs
       attrIndex = NC_Extractor.attrIndex
-      targetAttribute = NC_Extractor.TARGET_ATTRIBUTE
+      targetAttribute = NC_Extractor.TARGET_ATTRIBUTES
       origDsPathFormat = NC_Extractor.ORIG_DATASET_PATH_FORMAT
       distDsPathFormat = NC_Extractor.DIST_DATASET_PATH_FORMAT
-      allPaths = NC_Extractor.getAllPaths(0, 5)
+      allPaths = NC_Extractor.getAllPaths()
       normalJoinResultPath = NC_Extractor.NORMALJOIN_RESULT_PATH
       blockJoinResultPath = NC_Extractor.BLOCKJOIN_RESULT_PATH
       probabilisticJoinResultPath = NC_Extractor.PROBABILISTICJOIN_RESULT_PATH
@@ -80,10 +80,10 @@ object Joiner {
     } else if (scene == SCENE_FL) {
       dsAttrs = FL_Extractor.dsAttrs
       attrIndex = FL_Extractor.attrIndex
-      targetAttribute = FL_Extractor.TARGET_ATTRIBUTE
+      targetAttribute = FL_Extractor.TARGET_ATTRIBUTES
       origDsPathFormat = FL_Extractor.ORIG_DATASET_PATH_FORMAT
       distDsPathFormat = FL_Extractor.DIST_DATASET_PATH_FORMAT
-      allPaths = FL_Extractor.getAllPaths(0, 5)
+      allPaths = FL_Extractor.getAllPaths()
       normalJoinResultPath = FL_Extractor.NORMALJOIN_RESULT_PATH
       blockJoinResultPath = FL_Extractor.BLOCKJOIN_RESULT_PATH
       probabilisticJoinResultPath = FL_Extractor.PROBABILISTICJOIN_RESULT_PATH
@@ -91,71 +91,70 @@ object Joiner {
       blockProbabilisticJoin2ResultPath = FL_Extractor.BLOCK_PROBABILISTICJOIN_2_RESULT_PATH
     }
 
-    for (dsSize <- List(1000000)) { //List(1000, 10000, 100000, 1000000)
-      for (path <- List(allPaths(0))) { //List(allPaths(0), allPaths(3)
-        for (corrLevel <- List(0, 5, 10)) { // List(0, 5, 10)
-          for (levensteinThres <- List(0)) {
-            //            if((dsSize == 10000 && corrLevel == 0 && levensteinThres == 1))   {
-            val sc = Spark.getContext()
+    for (option <- List(CASE_PROBABILISTIC_JOIN_2, CASE_NORMAL_JOIN, CASE_BLOCK_PROBABILISTIC_JOIN_2)) {
+      for (dsSize <- List(1000, 10000)) { 
+        for (path <- List(List(0, 2, 4, 5).toArray)) { 
+          for (corrLevel <- List(0, 5, 10)) {
+            for (levensteinThres <- List(0, 1)) {
+              
+              val sc = Spark.getContext()
 
-            datasets = getDatasets(sc, dsSize, corrLevel)
-            testSamples = getTestSamples(sc, dsSize)
+              datasets = getDatasets(sc, dsSize, corrLevel)
+              testSamples = getTestSamples(sc, dsSize)
 
-            if (option == CASE_NORMAL_JOIN) {
-              pw = new PrintWriter(new FileWriter(normalJoinResultPath, true))
-              println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
-              pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+              if (option == CASE_NORMAL_JOIN) {
+                pw = new PrintWriter(new FileWriter(normalJoinResultPath, true))
+                println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+                pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
 
-              normalJoin(sc, datasets, testSamples, path, levensteinThres)
+                normalJoin(sc, datasets, testSamples, path, levensteinThres)
 
-              pw.flush
-              pw.close
-            } else if (option == CASE_PROBABILISTIC_JOIN) {
-              pw = new PrintWriter(new FileWriter(probabilisticJoinResultPath, true))
-              println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
-              pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+                pw.flush
+                pw.close
+              } else if (option == CASE_PROBABILISTIC_JOIN) {
+                pw = new PrintWriter(new FileWriter(probabilisticJoinResultPath, true))
+                println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+                pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
 
-              probabilisticJoin(sc, datasets, testSamples, path, levensteinThres)
+                probabilisticJoin(sc, datasets, testSamples, path, levensteinThres)
 
-              pw.flush
-              pw.close
-            } else if (option == CASE_BLOCK_JOIN) {
-              pw = new PrintWriter(new FileWriter(blockJoinResultPath, true))
-              println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
-              pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+                pw.flush
+                pw.close
+              } else if (option == CASE_BLOCK_JOIN) {
+                pw = new PrintWriter(new FileWriter(blockJoinResultPath, true))
+                println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+                pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
 
-              blockJoin(sc, datasets, testSamples, path, levensteinThres)
+                blockJoin(sc, datasets, testSamples, path, levensteinThres)
 
-              pw.flush
-              pw.close
-            } else if (option == CASE_PROBABILISTIC_JOIN_2) {
-              pw = new PrintWriter(new FileWriter(probabilisticJoin2ResultPath, true))
-              println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
-              pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+                pw.flush
+                pw.close
+              } else if (option == CASE_PROBABILISTIC_JOIN_2) {
+                pw = new PrintWriter(new FileWriter(probabilisticJoin2ResultPath, true))
+                println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+                pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
 
-              probabilisticJoin2(sc, datasets, testSamples, path, levensteinThres)
+                probabilisticJoin2(sc, datasets, testSamples, path, levensteinThres)
 
-              pw.flush
-              pw.close
-            } else if (option == CASE_BLOCK_PROBABILISTIC_JOIN_2) {
-              pw = new PrintWriter(new FileWriter(blockProbabilisticJoin2ResultPath, true))
-              println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
-              pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+                pw.flush
+                pw.close
+              } else if (option == CASE_BLOCK_PROBABILISTIC_JOIN_2) {
+                pw = new PrintWriter(new FileWriter(blockProbabilisticJoin2ResultPath, true))
+                println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
+                pw.println("\n\n\nsize: %d, path: %s, corruption: %d, levenstein: %d".format(dsSize, path.mkString("-"), corrLevel, levensteinThres))
 
-              blockProbabilisticJoin2(sc, datasets, testSamples, path, levensteinThres)
+                blockProbabilisticJoin2(sc, datasets, testSamples, path, levensteinThres)
 
-              pw.flush
-              pw.close
+                pw.flush
+                pw.close
+              }
+              sc.stop()
             }
-            sc.stop()
-            //            }
           }
         }
       }
     }
-
   }
-
 
   def getDatasets(sc: SparkContext, dsSize: Int, corrLevel: Int): Array[RDD[Array[String]]] = {
     val numDatasets = dsAttrs.size
@@ -179,6 +178,10 @@ object Joiner {
     for (i <- 0 to str.length() - n) yield str.substring(i, i + n)
   }
 
+  def getTargetValue(tuple: Array[String]): String = {
+    targetAttribute.map(attrIndex(_)).map(tuple(_)).mkString(COMMA)
+  }
+
   def blockJoin(sc: SparkContext, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
 
     val startTime = System.currentTimeMillis()
@@ -187,7 +190,7 @@ object Joiner {
     import spark.implicits._
 
     var ldb = sc.parallelize(testSamples).zipWithIndex().cache()
-    var groundTruth = ldb.map(x => (x._2, x._1(attrIndex(targetAttribute)))).collectAsMap()
+    var groundTruth = ldb.map(x => (x._2, getTargetValue(x._1))).collectAsMap()
     var attrSoFar = dsAttrs(path(0))
 
     for (i <- 0 to path.length - 2) {
@@ -241,7 +244,7 @@ object Joiner {
       val joinedDF = model.approxSimilarityJoin(lDF, rDF, DISTANCE_THRESHOLD)
         .select("datasetA.id", "datasetA.common", "datasetA.tuple", "datasetB.id", "datasetB.common", "datasetB.tuple").cache()
         .filter { r =>
-          approxEqual(r(1).asInstanceOf[String], r(5).asInstanceOf[String], levensteinThres)
+          approxEqual(r(1).asInstanceOf[String], r(4).asInstanceOf[String], levensteinThres)
         }.toDF("lid", "lcommon", "ltuple", "rid", "rcommon", "rtuple").cache()
 
       println(" -- -- join size: " + joinedDF.count())
@@ -260,8 +263,8 @@ object Joiner {
           (rtuple, lid)
         }
         .rdd.cache()
-        
-        ldb.count
+
+      ldb.count
 
       val rddEndTime = System.currentTimeMillis()
       println(" -- -- dataframe to rdd conversion time: " + TimeUnit.MILLISECONDS.toMinutes(rddEndTime - joinEndTime))
@@ -271,7 +274,7 @@ object Joiner {
     }
 
     val result = ldb.map { x =>
-      (x._2, x._1(attrIndex(targetAttribute)))
+      (x._2, getTargetValue(x._1))
     }
       .groupByKey()
       .map { x =>
@@ -319,7 +322,7 @@ object Joiner {
       var success = 0
 
       var ldb = sc.parallelize(testSamples).map(x => (x, 1.0)).zipWithIndex().cache()
-      var groundTruth = ldb.map(x => (x._2, x._1._1(attrIndex(targetAttribute)))).collectAsMap()
+      var groundTruth = ldb.map(x => (x._2, getTargetValue(x._1._1))).collectAsMap()
 
       var attrSoFar = dsAttrs(path(0))
 
@@ -388,7 +391,7 @@ object Joiner {
       }
 
       val result = ldb.map { x =>
-        ((x._2, x._1._1(attrIndex(targetAttribute))), x._1._2)
+        ((x._2, getTargetValue(x._1._1)), x._1._2)
       }
         .groupByKey()
         .map(x => (x._1._1, (x._1._2, x._2.sum)))
@@ -420,12 +423,12 @@ object Joiner {
 
     val startTime = System.currentTimeMillis()
 
-    for (k <- List(20, 30, 40)) {
+    for (k <- List(40)) {
 
       val subStartTime = System.currentTimeMillis()
 
       var ldb = sc.parallelize(testSamples).map(x => (x, 1.0)).zipWithIndex().cache()
-      var groundTruth = ldb.map(x => (x._2, x._1._1(attrIndex(targetAttribute)))).collectAsMap()
+      var groundTruth = ldb.map(x => (x._2, getTargetValue(x._1._1))).collectAsMap()
 
       var attrSoFar = dsAttrs(path(0))
 
@@ -493,7 +496,7 @@ object Joiner {
       }
 
       val result = ldb.map { x =>
-        ((x._2, x._1._1(attrIndex(targetAttribute))), x._1._2)
+        ((x._2, getTargetValue(x._1._1)), x._1._2)
       }
         .groupByKey()
         .map(x => (x._1._1, (x._1._2, x._2.sum)))
@@ -538,7 +541,7 @@ object Joiner {
     import spark.implicits._
 
     var ldb = sc.parallelize(testSamples).map(x => (x, 1.0)).zipWithIndex().cache()
-    var groundTruth = ldb.map(x => (x._2, x._1._1(attrIndex(targetAttribute)))).collectAsMap()
+    var groundTruth = ldb.map(x => (x._2, getTargetValue(x._1._1))).collectAsMap()
 
     var attrSoFar = dsAttrs(path(0))
 
@@ -636,7 +639,7 @@ object Joiner {
           ((rtuple, lscore), lid)
         }
         .rdd.cache()
-        
+
       ldb.count
 
       val rddEndTime = System.currentTimeMillis()
@@ -647,7 +650,7 @@ object Joiner {
     }
 
     val result = ldb.map { x =>
-      ((x._2, x._1._1(attrIndex(targetAttribute))), x._1._2)
+      ((x._2, getTargetValue(x._1._1)), x._1._2)
     }
       .groupByKey()
       .map(x => (x._1._1, (x._1._2, x._2.sum)))
@@ -681,9 +684,6 @@ object Joiner {
 
   }
 
-  
-  
-  
   def normalJoin(sc: SparkContext, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
 
     val startTime = System.currentTimeMillis()
@@ -691,7 +691,7 @@ object Joiner {
     val subStartTime = System.currentTimeMillis()
 
     var ldb = sc.parallelize(testSamples).zipWithIndex().cache()
-    var groundTruth = ldb.map(x => (x._2, x._1(attrIndex(targetAttribute)))).collectAsMap()
+    var groundTruth = ldb.map(x => (x._2, getTargetValue(x._1))).collectAsMap()
 
     var attrSoFar = dsAttrs(path(0))
 
@@ -743,7 +743,7 @@ object Joiner {
     }
 
     val result = ldb.map { x =>
-      (x._2, x._1(attrIndex(targetAttribute)))
+      (x._2, getTargetValue(x._1))
     }
       .groupByKey()
       .map { x =>
@@ -775,13 +775,10 @@ object Joiner {
     pw.println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
   }
 
-
-  
-  
   def approxEqual(lCommonAttrMap: Map[String, String], rCommonAttrMap: Map[String, String], levensteinThres: Int): Boolean = {
-    
-    if(levensteinThres == 0) return lCommonAttrMap == rCommonAttrMap
-    
+
+    if (levensteinThres == 0) return lCommonAttrMap == rCommonAttrMap
+
     val sortedKeys = lCommonAttrMap.keys.toSeq.sortWith(_ < _)
     val lValue = sortedKeys.map(lCommonAttrMap(_)).mkString("")
     val rValue = sortedKeys.map(rCommonAttrMap(_)).mkString("")
@@ -789,16 +786,13 @@ object Joiner {
     if (LevenshteinMetric.compare(lValue, rValue).get <= levensteinThres) return true
     else return false
   }
-  
-  
-  
+
   def approxEqual(lCommon: String, rCommon: String, levensteinThres: Int): Boolean = {
-    if(levensteinThres == 0) return lCommon == rCommon
-    
-    if(LevenshteinMetric.compare(lCommon, rCommon).get <= levensteinThres) return true
+    if (levensteinThres == 0) return lCommon == rCommon
+
+    if (LevenshteinMetric.compare(lCommon, rCommon).get <= levensteinThres) return true
     else return false
   }
-  
 
   def tupleToCommonAttrMap(tuple: Array[String], commonAttrs: List[String]): Map[String, String] = {
     var keyValue = Map[String, String]()

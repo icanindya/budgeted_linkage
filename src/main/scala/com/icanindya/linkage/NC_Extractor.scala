@@ -8,13 +8,13 @@ import java.io.File
 object NC_Extractor {
   // dataset address: https://s3.amazonaws.com/dl.ncsbe.gov/data/Snapshots/VR_Snapshot_20160315.zip
 
-  val ORIG_FILE_PATH = "E:/Data/Linkage/NC/NC16/data"
+ val ORIG_FILE_PATH = "E:/Data/Linkage/NC/NC16/data"
   val SAMP_FILE_PATH = "E:/Data/Linkage/NC/NC16/sampled/%d_%d"
-  val CSV_FILE_PATH = "E:/Data/Linkage/NC/NC16/sampled/csv/NC16_%d.csv"
   val DIST_DATASET_DIR = "E:/Data/Linkage/NC/NC16/sampled/csv/"
-  val HISTOGRAM_FILE_PATH = "E:/Data/Linkage/NC/NC16/histograms/%s.txt"
-  val ENTROPY_FILE_PATH = "E:/Data/Linkage/NC/NC16/entropies/entropy.txt"
-  val CORRUPTED_FILE_PATH = "E:/Data/Linkage/NC/NC16/corrupted/nc_16_cor%s_%s.csv"
+  val CSV_FILE_PATH_FORMAT = DIST_DATASET_DIR + "NC16_%d.csv" //.format(dsSize)
+ 
+  val HISTOGRAM_FILE_PATH_FORMAT = "E:/Data/Linkage/NC/NC16/sampled/histograms/%s.txt" //.format(i)
+  val ENTROPY_FILE_PATH = "E:/Data/Linkage/NC/NC16/sampled/entropies/entropy.txt"
 
   val NORMALJOIN_RESULT_PATH = "E:/Data/Linkage/NC/NC16/result/normal_join_result.txt"
   val BLOCKJOIN_RESULT_PATH = "E:/Data/Linkage/NC/NC16/result/block_join_result.txt"
@@ -39,7 +39,7 @@ object NC_Extractor {
   val NUM_HASH_TABLES = 5
   val DISTANCE_THRESHOLD = 0.3
   val LEVENSTEIN_THRESHOLD = 0
-  val TARGET_ATTRIBUTE = "age"
+  val TARGET_ATTRIBUTES = List("age")
 
   val NUM_CORRUPTED_ATTR = 7
   val NUM_ATTR = 15
@@ -86,22 +86,24 @@ object NC_Extractor {
     "nc_id" -> 14,
     "address" -> 15)
 
-  val dummyFrequency = Map("first_name" -> Map("JOHN" -> 1.0),
-    "middle_name" -> Map("DAVID" -> 1.0),
-    "last_name" -> Map("HART" -> 1.0),
-    "sex" -> Map("M" -> 1.0),
+//  LATOYA,NICOLE,BARBER,F,BLACK or AFRICAN AMERICAN,NOT HISPANIC or NOT LATINO,37,NC,28601,CATAWBA,DEM,2008-05-08,3964,000030054611,BN255002,1820 20TH AV DR HICKORY NC  
+    
+  val dummyFrequency = Map("first_name" -> Map("LATOYA" -> 1.0),
+    "middle_name" -> Map("NICOLE" -> 1.0),
+    "last_name" -> Map("BARBER" -> 1.0),
+    "sex" -> Map("F" -> 1.0),
     "race" -> Map[String, Double](),
     "ethnicity" -> Map[String, Double](),
     "age" -> Map[String, Double](),
     "birth_place" -> Map("NC" -> 1.0),
-    "zip" -> Map("27302" -> 1.0),
-    "county" -> Map("ALAMANCE" -> 1.0),
+    "zip" -> Map("28601" -> 1.0),
+    "county" -> Map("CATAWBA" -> 1.0),
     "party" -> Map[String, Double](),
     "reg_date" -> Map[String, Double](),
-    "phone" -> Map("*******658" -> 1.0),
+    "phone" -> Map("3964" -> 1.0),
     "voter_num" -> Map[String, Double](),
     "nc_id" -> Map[String, Double](),
-    "address" -> Map("2567, NC HWY 119, MEBANE, NC" -> 1.0))
+    "address" -> Map("1820 20TH AV DR HICKORY NC" -> 1.0))
 
   val dsAttrs = Array.ofDim[List[String]](NUM_DATASETS)
 
@@ -117,9 +119,9 @@ object NC_Extractor {
     generateCSV(sc, List((1000, 4), (10000, 4), (100000, 4)))
   }
 
-  def getAllPaths(s: Int, t: Int): List[Array[Int]] = {
+  def getAllPaths(): List[Array[Int]] = {
     val graph = new Graph(new AdjacencyList(dsAttrs).get())
-    graph.allPaths(s, t)
+    graph.allPaths(0, 5)
   }
 
   def processAndSample(sc: SparkContext, params: List[(Int, Int)]) {
@@ -202,8 +204,8 @@ object NC_Extractor {
     processAndSample(sc, params)
 
     for ((sampleSize, phDigits) <- params) {
-      val lines = sc.textFile(SAMP_FILE_PATH.format(sampleSize, phDigits))
-      val pw = new PrintWriter(new File(CSV_FILE_PATH.format(sampleSize, phDigits)))
+      val lines = sc.textFile(SAMP_FILE_PATH.format(sampleSize))
+      val pw = new PrintWriter(new File(CSV_FILE_PATH_FORMAT.format(sampleSize)))
       pw.println(attrIndex.toSeq.sortBy(_._2).map("\"" + _._1 + "\"").mkString(COMMA))
       for (line <- lines.map(_.split(COMMA, -1).map("\"" + _ + "\"").mkString(COMMA)).collect()) {
         pw.println(line)

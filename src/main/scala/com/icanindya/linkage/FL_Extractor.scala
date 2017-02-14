@@ -9,11 +9,11 @@ object FL_Extractor {
 
   val ORIG_FILE_PATH = "E:/Data/Linkage/FL/FL16/data"
   val SAMP_FILE_PATH = "E:/Data/Linkage/FL/FL16/sampled/%d_%d"
-  val CSV_FILE_PATH = "E:/Data/Linkage/FL/FL16/sampled/csv/FL16_%d.csv"
   val DIST_DATASET_DIR = "E:/Data/Linkage/FL/FL16/sampled/csv/"
-  val HISTOGRAM_FILE_PATH = "E:/Data/Linkage/FL/FL16/histograms/%s.txt"
-  val ENTROPY_FILE_PATH = "E:/Data/Linkage/FL/FL16/entropies/entropy.txt"
-  val CORRUPTED_FILE_PATH = "E:/Data/Linkage/FL/FL16/corrupted/FL_16_cor%s_%s.csv"
+  val CSV_FILE_PATH_FORMAT = DIST_DATASET_DIR + "FL16_%d.csv" //.format(dsSize)
+ 
+  val HISTOGRAM_FILE_PATH_FORMAT = "E:/Data/Linkage/FL/FL16/sampled/histograms/%s.txt" //.format(i)
+  val ENTROPY_FILE_PATH = "E:/Data/Linkage/FL/FL16/sampled/entropies/entropy.txt"
 
   val NORMALJOIN_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/normal_join_result.txt"
   val BLOCKJOIN_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/block_join_result.txt"
@@ -38,7 +38,7 @@ object FL_Extractor {
   val NUM_HASH_TABLES = 5
   val DISTAFLE_THRESHOLD = 0.3
   val LEVENSTEIN_THRESHOLD = 0
-  val TARGET_ATTRIBUTE = "age"
+  val TARGET_ATTRIBUTES = List("first_name", "last_name")
 
   val NUM_CORRUPTED_ATTR = 7
   val NUM_ATTR = 15
@@ -79,19 +79,22 @@ object FL_Extractor {
     "voter_num" -> 11,
     "email" -> 12,
     "address" -> 13)
+    
+//  MARIA,JANEL,ROTH,F,2,02/27/1972,34983,STL,DEM,03/07/2013,9187,120771452,LEOANDJANEL@MSN.COM,508  SE BROOKSIDE TER PT ST LUCIE
+  
 
   val dummyFrequency = Map(
     "first_name" -> Map[String, Double](),
     "middle_name" -> Map[String, Double](),
     "last_name" -> Map[String, Double](),
-    "sex" -> Map("M" -> 1.0),
-    "race" -> Map("5" -> 1.0),
+    "sex" -> Map("F" -> 1.0),
+    "race" -> Map("2" -> 1.0),
     "dob" -> Map[String, Double](),
-    "zip" -> Map("32605" -> 1.0),
-    "county" -> Map("ALA" -> 1.0),
+    "zip" -> Map("34983" -> 1.0),
+    "county" -> Map("STL" -> 1.0),
     "party" -> Map[String, Double](),
     "reg_date" -> Map[String, Double](),
-    "phone" -> Map("*******744" -> 1.0),
+    "phone" -> Map("9187" -> 1.0),
     "voter_num" -> Map[String, Double](),
     "email" -> Map[String, Double](),
     "address" -> Map[String, Double]())
@@ -109,9 +112,9 @@ object FL_Extractor {
     generateCSV(sc, List((1000, 4), (10000, 4), (100000, 4)))
   }
 
-  def getAllPaths(s: Int, t: Int): List[Array[Int]] = {
+  def getAllPaths(): List[Array[Int]] = {
     val graph = new Graph(new AdjacencyList(dsAttrs).get())
-    graph.allPaths(s, t)
+    graph.allPaths(0, 5)
   }
 
   def processAndSample(sc: SparkContext, params: List[(Int, Int)]) {
@@ -191,8 +194,8 @@ object FL_Extractor {
     processAndSample(sc, params)
 
     for ((sampleSize, phDigits) <- params) {
-      val lines = sc.textFile(SAMP_FILE_PATH.format(sampleSize, phDigits))
-      val pw = new PrintWriter(new File(CSV_FILE_PATH.format(sampleSize, phDigits)))
+      val lines = sc.textFile(SAMP_FILE_PATH.format(sampleSize))
+      val pw = new PrintWriter(new File(CSV_FILE_PATH_FORMAT.format(sampleSize)))
       pw.println(attrIndex.toSeq.sortBy(_._2).map("\"" + _._1 + "\"").mkString(COMMA))
       for (line <- lines.map(_.split(COMMA, -1).map("\"" + _ + "\"").mkString(COMMA)).collect()) {
         pw.println(line)
