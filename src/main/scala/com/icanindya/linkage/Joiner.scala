@@ -59,7 +59,7 @@ object Joiner {
 
   var pw: PrintWriter = null
 
-  val scene = SCENE_FL
+  val scene = SCENE_NC
   val option = CASE_BLOCK_JOIN
 
   def main(args: Array[String]): Unit = {
@@ -91,11 +91,12 @@ object Joiner {
       blockProbabilisticJoin2ResultPath = FL_Extractor.BLOCK_PROBABILISTICJOIN_2_RESULT_PATH
     }
 
-    for (option <- List(CASE_PROBABILISTIC_JOIN_2, CASE_NORMAL_JOIN, CASE_BLOCK_PROBABILISTIC_JOIN_2)) {
-      for (dsSize <- List(1000, 10000)) { 
-        for (path <- List(List(0, 2, 4, 5).toArray)) { 
+
+    for (dsSize <- List(1000, 10000, 100000, 1000000)) { 
+      for (option <- List(CASE_PROBABILISTIC_JOIN_2, CASE_NORMAL_JOIN, CASE_BLOCK_PROBABILISTIC_JOIN_2)) {
+        for (path <- List(List(0, 2, 3, 5).toArray)) { 
           for (corrLevel <- List(0, 5, 10)) {
-            for (levensteinThres <- List(0, 1)) {
+            for (levensteinThres <- List(0)) {
               
               val sc = Spark.getContext()
 
@@ -304,8 +305,8 @@ object Joiner {
 
     val endTime = System.currentTimeMillis()
 
-    println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
-    pw.println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
+    println(" -- total time: %d min or %d sec".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime), TimeUnit.MILLISECONDS.toSeconds(endTime - startTime)))
+    pw.println(" -- total time: %d min or %d sec".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime), TimeUnit.MILLISECONDS.toSeconds(endTime - startTime)))
 
   }
 
@@ -415,8 +416,8 @@ object Joiner {
 
     val endTime = System.currentTimeMillis()
 
-    println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
-    pw.println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
+    println(" -- total time: %d min or %d sec".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime), TimeUnit.MILLISECONDS.toSeconds(endTime - startTime)))
+    pw.println(" -- total time: %d min or %d sec".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime), TimeUnit.MILLISECONDS.toSeconds(endTime - startTime)))
   }
 
   def probabilisticJoin2(sc: SparkContext, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
@@ -527,8 +528,8 @@ object Joiner {
 
     val endTime = System.currentTimeMillis()
 
-    println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
-    pw.println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
+    println(" -- total time: %d min or %d sec".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime), TimeUnit.MILLISECONDS.toSeconds(endTime - startTime)))
+    pw.println(" -- total time: %d min or %d sec".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime), TimeUnit.MILLISECONDS.toSeconds(endTime - startTime)))
   }
 
   def blockProbabilisticJoin2(sc: SparkContext, datasets: Array[RDD[Array[String]]], testSamples: Array[Array[String]], path: Array[Int], levensteinThres: Int) {
@@ -679,8 +680,8 @@ object Joiner {
 
     val endTime = System.currentTimeMillis()
 
-    println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
-    pw.println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
+    println(" -- total time: %d min or %d sec".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime), TimeUnit.MILLISECONDS.toSeconds(endTime - startTime)))
+    pw.println(" -- total time: %d min or %d sec".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime), TimeUnit.MILLISECONDS.toSeconds(endTime - startTime)))
 
   }
 
@@ -771,8 +772,8 @@ object Joiner {
 
     val endTime = System.currentTimeMillis()
 
-    println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
-    pw.println(" -- total time: %d min".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime)))
+    println(" -- total time: %d min or %d sec".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime), TimeUnit.MILLISECONDS.toSeconds(endTime - startTime)))
+    pw.println(" -- total time: %d min or %d sec".format(TimeUnit.MILLISECONDS.toMinutes(endTime - startTime), TimeUnit.MILLISECONDS.toSeconds(endTime - startTime)))
   }
 
   def approxEqual(lCommonAttrMap: Map[String, String], rCommonAttrMap: Map[String, String], levensteinThres: Int): Boolean = {
