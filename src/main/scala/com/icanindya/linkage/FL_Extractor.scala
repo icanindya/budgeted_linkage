@@ -19,6 +19,7 @@ object FL_Extractor {
   val BLOCKJOIN_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/block_join_result.txt"
   val PROBABILISTICJOIN_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/probabilistic_join_result.txt"
   val PROBABILISTICJOIN_2_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/probabilistic_join_2_result.txt"
+  val PROBABILISTICJOIN_3_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/probabilistic_join_3_result.txt"
   val BLOCK_PROBABILISTICJOIN_2_RESULT_PATH = "E:/Data/Linkage/FL/FL16/result/block_probabilistic_join_2_result.txt"
 
   val ORIG_DATASET_PATH_FORMAT = DIST_DATASET_DIR + "FL16_%d_0.csv" //.format(dsSize)
@@ -99,13 +100,13 @@ object FL_Extractor {
     "email" -> Map[String, Double](),
     "address" -> Map[String, Double]())
 
-  val dsAttrs = Array.ofDim[List[String]](NUM_DATASETS)
-  dsAttrs(0) = List("phone", "zip", "county", "race", "sex")
-  dsAttrs(1) = List("phone", "county", "voter_num")
-  dsAttrs(2) = List("phone", "race", "zip", "dob")
-  dsAttrs(3) = List("voter_num", "reg_date")
-  dsAttrs(4) = List("zip", "dob", "address")
-  dsAttrs(5) = List("address", "dob", "reg_date", "first_name", "last_name")
+  val dsAttrs = Array.ofDim[Set[String]](NUM_DATASETS)
+  dsAttrs(0) = Set("phone", "zip", "county", "race", "sex")
+  dsAttrs(1) = Set("phone", "county", "voter_num")
+  dsAttrs(2) = Set("phone", "race", "zip", "dob")
+  dsAttrs(3) = Set("voter_num", "reg_date")
+  dsAttrs(4) = Set("zip", "dob", "address")
+  dsAttrs(5) = Set("address", "dob", "reg_date", "first_name", "last_name")
 
   def main(args: Array[String]) {
     val sc = Spark.getContext()

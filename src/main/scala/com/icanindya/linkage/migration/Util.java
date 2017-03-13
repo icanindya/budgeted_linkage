@@ -1,4 +1,4 @@
-package com.icanindya.linkage;
+package com.icanindya.linkage.migration;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

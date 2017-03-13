@@ -20,6 +20,7 @@ object NC_Extractor {
   val BLOCKJOIN_RESULT_PATH = "E:/Data/Linkage/NC/NC16/result/block_join_result.txt"
   val PROBABILISTICJOIN_RESULT_PATH = "E:/Data/Linkage/NC/NC16/result/probabilistic_join_result.txt"
   val PROBABILISTICJOIN_2_RESULT_PATH = "E:/Data/Linkage/NC/NC16/result/probabilistic_join_2_result.txt"
+  val PROBABILISTICJOIN_3_RESULT_PATH = "E:/Data/Linkage/NC/NC16/result/probabilistic_join_3_result.txt"
   val BLOCK_PROBABILISTICJOIN_2_RESULT_PATH = "E:/Data/Linkage/NC/NC16/result/block_probabilistic_join_2_result.txt"
 
   val ORIG_DATASET_PATH_FORMAT = DIST_DATASET_DIR + "NC16_%d_0.csv" //.format(dsSize)
@@ -104,15 +105,16 @@ object NC_Extractor {
     "voter_num" -> Map[String, Double](),
     "nc_id" -> Map[String, Double](),
     "address" -> Map("1820 20TH AV DR HICKORY NC" -> 1.0))
+    
 
-  val dsAttrs = Array.ofDim[List[String]](NUM_DATASETS)
+  val dsAttrs = Array.ofDim[Set[String]](NUM_DATASETS)
 
-  dsAttrs(0) = List("first_name", "middle_name", "last_name", "sex", "address", "zip", "phone", "county", "birth_place")
-  dsAttrs(1) = List("first_name", "middle_name", "reg_date", "zip", "race", "birth_place")
-  dsAttrs(2) = List("last_name", "sex", "address", "voter_num")
-  dsAttrs(3) = List("voter_num", "reg_date", "race", "ethnicity", "party")
-  dsAttrs(4) = List("phone", "county", "nc_id")
-  dsAttrs(5) = List("reg_date", "nc_id", "race", "ethnicity", "party", "age")
+  dsAttrs(0) = Set("first_name", "middle_name", "last_name", "sex", "address", "zip", "phone", "county", "birth_place")
+  dsAttrs(1) = Set("first_name", "middle_name", "reg_date", "zip", "race", "birth_place")
+  dsAttrs(2) = Set("last_name", "sex", "address", "voter_num")
+  dsAttrs(3) = Set("voter_num", "reg_date", "race", "ethnicity", "party")
+  dsAttrs(4) = Set("phone", "county", "nc_id")
+  dsAttrs(5) = Set("reg_date", "nc_id", "race", "ethnicity", "party", "age")
 
   def main(args: Array[String]): Unit = {
     val sc = Spark.getContext()

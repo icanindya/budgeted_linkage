@@ -6,7 +6,7 @@ import java.io.PrintWriter
 import java.io.FileWriter
 import com.icanindya.linkage.migration.Person
 import com.icanindya.linkage.Spark
-import com.icanindya.linkage.Util
+import com.icanindya.linkage.migration.Util
 import org.apache.spark.rdd.RDD.rddToPairRDDFunctions
 
 
